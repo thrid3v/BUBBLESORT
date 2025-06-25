@@ -1,0 +1,58 @@
+---
+import Cards from '../landing/landingPageCards.astro'
+---
+<div class="outerContainer flex flex-col items-center justify-center mt-20">
+    <h1 class="text-5xl text-center text-wrap mb-[6rem] font-[Montserrat] text-[#fff] [text-shadow:0px_4px_4px_#6745EB]">CHOOSE A DATA STRUCTURE</h1>
+    <div class="container flex flex-col flex-wrap justify-center items-center gap-25">
+        <div class="inside-one flex flex-row flex-wrap justify-center items-center gap-20">
+            <Cards 
+                icon="src/assets/array.svg" 
+                text="Explore all kinds of searching and sorting algorithms in Arrays" 
+                altText="Array Icon" 
+                buttonText="Explore Array" 
+                buttonTarget="window.location.href='/array'"
+            />
+        
+            <Cards 
+                icon="src/assets/stack.svg" 
+                text="Explore all kinds of searching and sorting algorithms in Stacks" 
+                altText="Stack Icon" 
+                buttonText="Explore Stack" 
+                buttonTarget="window.location.href='/stack'"
+            />
+
+            <Cards 
+                icon="src/assets/queue.svg" 
+                text="Explore all kinds of searching and sorting algorithms in Queues" 
+                altText="Queue Icon" 
+                buttonText="Explore Queue" 
+                buttonTarget="window.location.href='/queue'"
+            />
+        </div>
+        <div class="inside-two flex flex-row flex-wrap justify-center items-center gap-20">
+            <Cards 
+                icon="src/assets/linkedList.svg" 
+                text="Explore all kinds of searching and sorting algorithms in Linked Lists" 
+                altText="Linked List Icon" 
+                buttonText="Explore Linked List" 
+                buttonTarget="window.location.href='/linked-list'"
+            />
+
+            <Cards 
+                icon="src/assets/binaryTree.svg" 
+                text="Explore all kinds of searching and sorting algorithms in Binary Trees" 
+                altText="Binary Tree Icon" 
+                buttonText="Explore Binary Tree" 
+                buttonTarget="window.location.href='/binary-tree'"
+            />
+
+            <Cards 
+                icon="src/assets/matrix.svg" 
+                text="Explore all kinds of searching and sorting algorithms in Matrices" 
+                altText="Matrix Icon" 
+                buttonText="Explore Matrix" 
+                buttonTarget="window.location.href='/matrix'"
+            />
+        </div>
+    </div>
+</div>

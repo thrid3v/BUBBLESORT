@@ -1,0 +1,102 @@
+---
+const { icon, altText, text, buttonText, buttonTarget } = Astro.props;
+---
+
+<div
+class="cards border-mask relative group w-[19rem] h-[23rem] rounded-2xl p-[2px] overflow-hidden before:absolute before:inset-0 before:p-[2px] before:rounded-2xl before:pointer-events-none before:z-0"
+>
+  <div
+    class="flex flex-col justify-between items-center gap-[2rem] p-[1.5rem] w-full h-full rounded-2xl bg-gradient-to-br from-slate-800/10 to-gray-700/10 backdrop-blur-[2px] z-10 relative"
+  >
+    <div
+      class="border-mask order-first w-16 h-16 relative rounded-xl overflow-hidden"
+    >
+      <div
+        class="absolute inset-0 rounded-[20px] bg-gradient-to-br from-slate-800/60 to-gray-700/60 backdrop-blur-[2px] z-0"
+      >
+      </div>
+
+      <img
+        src={icon}
+        alt={altText}
+        class="absolute inset-0 m-auto w-9 h-9 object-contain z-10"
+      />
+
+      <div
+        class="bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#6E5FCB] to-transparent z-20"
+      >
+      </div>
+    </div>
+
+    <div
+      class="self-stretch text-center text-stone-300 text-lg font-normal font-[Inter]"
+    >
+      {text}
+    </div>
+
+    <button
+      class="order-last relative rounded-2xl p-[2px] overflow-hidden w-[15rem] h-13 cursor-pointer before:absolute before:inset-0 before:p-[2px] before:rounded-2xl before:bg-linear-to-r before:from-[#6E6EA1] before:[#29293B] before:pointer-events-none before:z-0"
+      onclick={buttonTarget}
+    >
+      <div
+        class="relative h-full flex items-center justify-center text-white text-base font-[Poppins] z-10 bg-linear-to-b from-[#21212E] to-[#686894] rounded-2xl"
+      >
+        {buttonText}
+      </div>
+    </button>
+  </div>
+</div>
+
+<script type="module">
+  import gsap from "https://cdn.skypack.dev/gsap";
+
+  const cards = document.querySelectorAll(".cards");
+
+  cards.forEach((card) => {
+    let angle = 135;
+    let tween;
+
+    card.addEventListener("mouseenter", () => {
+      tween = gsap.to(
+        {},
+        {
+          duration: 0.03,
+          repeat: -1,
+          onRepeat: () => {
+            angle += 2;
+            card.style.setProperty("--angle", `${angle % 360}deg`);
+          },
+        }
+      );
+    });
+
+    card.addEventListener("mouseleave", () => {
+      if (tween) tween.kill();
+      gsap.to(card, {
+        duration: 1.2,
+        ease: "power2.out",
+        onUpdate: () => {
+          angle = gsap.utils.interpolate(angle, 135, 0.1);
+          card.style.setProperty("--angle", `${angle % 360}deg`);
+        },
+      });
+    });
+  });
+</script>
+
+<style>
+  .border-mask::before {
+    /* do not delete, required css */
+    content: "";
+    background: linear-gradient(
+      var(--angle, 135deg),
+      rgba(36, 35, 55, 0.5),
+      #6e5fcb,
+      #232234
+    );
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+</style>

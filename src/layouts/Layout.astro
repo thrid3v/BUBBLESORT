@@ -1,0 +1,59 @@
+---
+
+---
+
+<html lang="en">
+	<head>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Traceflow Local</title> <!-- ADD PROPS HERE -->
+	
+	</head>
+	<body class="flex flex-col justify-center items-center bg-[#0C0C1A]">
+		<img src="src/assets/logo.svg" class="fixed top-4 left-7 w-[min(80px,7vw)]">
+
+		<div class="fixed flex flex-col justify-between items-center w-full h-screen z-[-5]">
+				<div id = "bg-layer-1" class = "w-[150%] rounded-[50%] bg-gradient-to-l from-[rgba(49,49,78,0.10)] to-[rgba(33,33,56,0.10)] mt-[-60%] aspect-[1995/1345]"></div>
+				<div id = "bg-layer-2" class = "w-[150%] rounded-[50%] bg-gradient-to-l from-[rgba(49,49,78,0.10)] to-[rgba(33,33,56,0.10)] mt-[100%] aspect-[2338/1643]"></div>
+		</div>
+		
+		
+		<slot />
+
+		<script type="module">
+			import { gsap } from "gsap";
+			import { ScrollTrigger } from "gsap/ScrollTrigger";
+			gsap.registerPlugin(ScrollTrigger);
+
+			window.addEventListener("DOMContentLoaded", () => {
+			
+			gsap.to("#bg-layer-1", {
+				y: -500,
+				scrollTrigger: {
+				trigger: "body",
+				start: "top top",
+				end: "bottom bottom",
+				scrub: 1
+				}
+			});
+
+			gsap.to("#bg-layer-2", {
+				y: -1500, 
+				scrollTrigger: {
+				trigger: "body",
+				start: "top top",
+				end: "bottom bottom",
+				scrub: 1
+				}
+			});
+			})
+		</script>
+
+	</body>
+</html>
