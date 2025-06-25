@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ArrayBox from './ArrayBox';
 
-const InputHandler = ({ setArray, setSearchElement }) => {
+const InputHandler = ({ setArray, setSearchElement, resetFlag }) => {
   const [input, setInput] = useState('');
   const [element, setElement] = useState('');
   const [localArray, setLocalArray] = useState([]);
+
+  useEffect(() => {
+    setInput('');
+    setElement('');
+    setLocalArray([]);
+    setArray([]);
+    setSearchElement(null);
+  }, [resetFlag, setArray, setSearchElement]);
 
   const handleGenerate = () => {
     const finalArray = input

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import LinearSearch from '../algos/LinearSearch';
 import BinarySearch from '../algos/BinarySearch';
+import BubbleSort from '../algos/BubbleSort';
 
 const AlgoLayout = ({ array, searchElement, selectedAlgo }) => {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -19,6 +20,13 @@ const AlgoLayout = ({ array, searchElement, selectedAlgo }) => {
         <BinarySearch
           array={array}
           searchElement={searchElement}
+          isPlaying={isPlaying}
+        />
+      );
+    if (selectedAlgo === 'bubble')
+      return (
+        <BubbleSort
+          array={array}
           isPlaying={isPlaying}
         />
       );

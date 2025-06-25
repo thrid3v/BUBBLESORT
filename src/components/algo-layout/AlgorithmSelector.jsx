@@ -15,6 +15,12 @@ const AlgorithmSelector = ({ setSelectedAlgo }) => {
       >
         Binary Search
       </button>
+      <button
+        className="bg-purple-600 hover:bg-purple-800 px-4 py-2 rounded text-white"
+        onClick={() => setSelectedAlgo('bubble')}
+      >
+        Bubble Sort
+      </button>
     </div>
   );
 };
