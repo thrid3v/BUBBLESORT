@@ -1,118 +1,100 @@
-import React, { useEffect, useState } from 'react';
-import gsap from 'gsap';
+import React, { useState, useRef } from 'react';
 import ArrayBox from '../algo-layout/ArrayBox';
 
-const ANIMATION_SPEED = 400; // ms per step
+// Helper to generate the array state after each outer loop iteration
+function getBubbleSortPasses(inputArr) {
+  const arr = [...inputArr];
+  const n = arr.length;
+  const history = [[...arr]]; // First row: input array
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n - i - 1; j++) {
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+      }
+    }
+    history.push([...arr]); // After each outer loop iteration
+  }
+  return history;
+}
 
-/**
- * BubbleSort component visualizes the bubble sort algorithm.
- * It highlights compared elements in orange, swaps in blue, and sorted elements in green.
- *
- * Props:
- * - array: Array of numbers to sort.
- * - isPlaying: Boolean to control whether the animation runs.
- */
-const BubbleSort = ({ array, isPlaying }) => {
-  const [displayArray, setDisplayArray] = useState([...array]);
+const BubbleSort = ({ array }) => {
+  const [step, setStep] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const intervalRef = useRef(null);
 
-  useEffect(() => {
-    setDisplayArray([...array]);
+  // Precompute the history for the current array
+  const history = getBubbleSortPasses(array);
+
+  // Controls
+  const play = () => {
+    if (intervalRef.current) return;
+    setIsPlaying(true);
+    intervalRef.current = setInterval(() => {
+      setStep(s => {
+        if (s < history.length - 1) return s + 1;
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        setIsPlaying(false);
+        return s;
+      });
+    }, 800);
+  };
+  const pause = () => {
+    setIsPlaying(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+  const stepForward = () => {
+    setStep(s => Math.min(s + 1, history.length - 1));
+  };
+  const stepBack = () => {
+    setStep(s => Math.max(s - 1, 0));
+  };
+  // Reset on array change
+  React.useEffect(() => {
+    setStep(0);
+    pause();
   }, [array]);
+  React.useEffect(() => () => pause(), []);
 
-  useEffect(() => {
-    if (!isPlaying || displayArray.length === 0) return;
-
-    let isCancelled = false;
-
-    const animate = async () => {
-      let arr = [...displayArray];
-      const n = arr.length;
-
-      // Reset all boxes to default color
-      for (let i = 0; i < n; i++) {
-        gsap.to(`#bubble-box-${i}`, {
-          backgroundColor: '#f3f4f6',
-          borderColor: '#d1d5db',
-          opacity: 1,
-          duration: 0.1,
-        });
-      }
-
-      for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n - i - 1; j++) {
-          if (isCancelled) return;
-          // Highlight compared elements
-          gsap.to([`#bubble-box-${j}`, `#bubble-box-${j + 1}`], {
-            backgroundColor: '#f59e0b',
-            borderColor: '#d97706',
-            duration: 0.2,
-          });
-          await new Promise(res => setTimeout(res, ANIMATION_SPEED));
-
-          if (arr[j] > arr[j + 1]) {
-            // Highlight swap
-            gsap.to([`#bubble-box-${j}`, `#bubble-box-${j + 1}`], {
-              backgroundColor: '#2563eb',
-              borderColor: '#1d4ed8',
-              duration: 0.2,
-            });
-            await new Promise(res => setTimeout(res, ANIMATION_SPEED / 2));
-            // Blinking (fade out, then in)
-            await new Promise(resolve => {
-              gsap.to([`#bubble-box-${j}`, `#bubble-box-${j + 1}`], {
-                opacity: 0,
-                duration: 0.2,
-                yoyo: true,
-                repeat: 1,
-                onComplete: resolve
-              });
-            });
-            // Swap values
-            const temp = arr[j];
-            arr[j] = arr[j + 1];
-            arr[j + 1] = temp;
-            setDisplayArray(arr.slice());
-            await new Promise(res => setTimeout(res, ANIMATION_SPEED / 2));
-          }
-          // Unhighlight after comparison
-          gsap.to([`#bubble-box-${j}`, `#bubble-box-${j + 1}`], {
-            backgroundColor: '#f3f4f6',
-            borderColor: '#d1d5db',
-            opacity: 1,
-            duration: 0.2,
-          });
-          await new Promise(res => setTimeout(res, ANIMATION_SPEED / 2));
-        }
-        // Mark the last sorted element
-        gsap.to(`#bubble-box-${n - i - 1}`, {
-          backgroundColor: '#22c55e',
-          borderColor: '#15803d',
-          opacity: 1,
-          duration: 0.3,
-        });
-      }
-      // Mark all as sorted at the end
-      for (let i = 0; i < n; i++) {
-        gsap.to(`#bubble-box-${i}`, {
-          backgroundColor: '#22c55e',
-          borderColor: '#15803d',
-          opacity: 1,
-          duration: 0.3,
-        });
-      }
-    };
-
-    animate();
-    return () => {
-      isCancelled = true;
-    };
-  }, [isPlaying, displayArray.length]);
-
+  // Render the grid: each row is a pass, each cell is an array value
   return (
-    <div className="flex justify-center flex-wrap gap-2 mt-4">
-      {displayArray.map((val, i) => (
-        <ArrayBox key={i} value={val} index={i} prefix="bubble-box" />
-      ))}
+    <div className="flex flex-col gap-8 w-full">
+      {/* Visualization Grid */}
+      <div className="bg-[#18182a] p-6 rounded-xl flex-1">
+        <div className="mb-4 text-xl font-bold text-center">Visualisation</div>
+        <div className="overflow-x-auto">
+          <div className="flex flex-col gap-2">
+            {history.slice(0, step + 1).map((row, rowIdx) => (
+              <div key={rowIdx} className="flex gap-2 justify-center">
+                {row.map((val, i) => {
+                  // Highlight sorted portion in green for all but the first row
+                  let boxClass = '';
+                  if (rowIdx > 0 && i >= row.length - rowIdx) boxClass = 'bg-green-700 border-green-400';
+                  return (
+                    <div
+                      key={i}
+                      className={`w-12 h-12 rounded-lg border-2 text-center flex flex-col justify-center items-center font-mono text-lg font-bold transition-all duration-200 ${boxClass}`}
+                      style={{ color: '#fff' }}
+                    >
+                      {val}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Controls */}
+        <div className="flex gap-2 justify-center mt-4">
+          <button onClick={stepBack} className="bg-gray-600 px-3 py-1 rounded text-white" disabled={step === 0}>Prev</button>
+          <button onClick={play} className="bg-yellow-600 px-3 py-1 rounded text-white" disabled={isPlaying || step === history.length - 1}>Play</button>
+          <button onClick={pause} className="bg-gray-600 px-3 py-1 rounded text-white" disabled={!isPlaying}>Pause</button>
+          <button onClick={stepForward} className="bg-gray-600 px-3 py-1 rounded text-white" disabled={step === history.length - 1}>Next</button>
+        </div>
+      </div>
     </div>
   );
 };
