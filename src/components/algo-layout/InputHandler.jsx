@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import ArrayBox from './ArrayBox';
 
+const MAX_ARRAY_LENGTH = 8;
+const MIN_VALUE = -100;
+const MAX_VALUE = 100;
+
 const InputHandler = ({ setArray, setSearchElement, resetFlag }) => {
   const [input, setInput] = useState('');
   const [element, setElement] = useState('');
   const [localArray, setLocalArray] = useState([]);
+  const [warning, setWarning] = useState('');
 
   useEffect(() => {
     setInput('');
@@ -12,13 +17,36 @@ const InputHandler = ({ setArray, setSearchElement, resetFlag }) => {
     setLocalArray([]);
     setArray([]);
     setSearchElement(null);
+    setWarning('');
   }, [resetFlag, setArray, setSearchElement]);
 
   const handleGenerate = () => {
+    let invalid = false;
     const finalArray = input
       .split(',')
-      .map((num) => parseInt(num.trim()))
-      .filter((n) => !isNaN(n));
+      .map((num) => {
+        const trimmed = num.trim();
+        if (!/^[-+]?\d+$/.test(trimmed)) {
+          invalid = true;
+          return null;
+        }
+        const parsed = parseInt(trimmed);
+        if (isNaN(parsed) || parsed < MIN_VALUE || parsed > MAX_VALUE) {
+          invalid = true;
+          return null;
+        }
+        return parsed;
+      })
+      .filter((n) => n !== null);
+    if (finalArray.length > MAX_ARRAY_LENGTH) {
+      setWarning(`Maximum allowed array length is ${MAX_ARRAY_LENGTH}.`);
+      return;
+    }
+    if (invalid) {
+      setWarning(`Only numbers between ${MIN_VALUE} and ${MAX_VALUE} are allowed. Invalid entries were ignored.`);
+    } else {
+      setWarning('');
+    }
     setLocalArray(finalArray);
     setArray(finalArray);
     setSearchElement(parseInt(element));
@@ -48,15 +76,16 @@ const InputHandler = ({ setArray, setSearchElement, resetFlag }) => {
           Generate
         </button>
       </div>
-
+      {warning && (
+        <div className="text-red-400 font-mono text-sm text-center">{warning}</div>
+      )}
       {localArray.length > 0 && (
-  <div className="flex justify-center flex-wrap gap-2 mt-4">
-    {localArray.map((val, i) => (
-      <ArrayBox key={i} value={val} index={i} prefix="input-box" />
-    ))}
-  </div>
-)}
-
+        <div className="flex justify-center flex-wrap gap-2 mt-4">
+          {localArray.map((val, i) => (
+            <ArrayBox key={i} value={val} index={i} prefix="input-box" />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -158,10 +158,10 @@ const BubbleSort = ({ array }) => {
   // Render all previous passes as static rows
   return (
     <div className="flex flex-col gap-8 w-full items-center">
-      <div className="bg-[#18182a] p-8 rounded-2xl shadow-lg flex flex-col items-center w-fit mx-auto">
+      <div className="bg-[#18182a] p-8 rounded-2xl shadow-lg flex flex-col items-center w-full max-w-fit mx-auto min-h-[400px] justify-center">
         <div className="mb-4 text-2xl font-bold text-center text-white">Visualisation</div>
         {/* Header row for indices */}
-        <div className="flex justify-center mb-2 gap-2">
+        <div className="flex justify-center mb-2 gap-2 w-full">
           {initialArray.map((_, i) => (
             <div
               key={i}
@@ -173,18 +173,18 @@ const BubbleSort = ({ array }) => {
           ))}
         </div>
         <div
-          className="flex flex-col items-center gap-2 overflow-y-auto"
-          style={{ maxHeight: '70vh', minHeight: ROW_HEIGHT * totalRows + 'px' }}
+          className="flex flex-col items-center gap-2 scrollbar-hide w-full"
+          style={{ minHeight: ROW_HEIGHT * totalRows + 'px' }}
         >
-          {/* Empty row at the top before animation starts */}
+          {/* First row at the top with the default values before animation starts */}
           <div className="flex gap-2 justify-center">
             {Array.from({ length: n }).map((_, colIdx) => (
               <div
                 key={colIdx}
-                className="w-14 h-14 rounded-lg flex flex-col justify-center items-center font-mono text-lg font-bold border-2 border-white bg-[#23233a] text-white opacity-30"
+                className="w-14 h-14 rounded-lg flex flex-col justify-center items-center font-mono text-lg font-bold border-2 border-white bg-[#23233a] text-white"
                 style={{ margin: 0 }}
               >
-                {/* empty */}
+                {initialArray[colIdx]?.val ?? ''}
               </div>
             ))}
           </div>
