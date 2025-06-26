@@ -1,102 +1,280 @@
-import React, { useState, useRef } from 'react';
-import ArrayBox from '../algo-layout/ArrayBox';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import gsap from 'gsap';
 
-// Helper to generate the array state after each outer loop iteration
-function getBubbleSortPasses(inputArr) {
-  const arr = [...inputArr];
+// Helper to generate the sequence of comparisons and swaps for each i pass
+function getBubbleSortPassesWithIds(inputArr) {
+  const arr = inputArr.map((val, idx) => ({ id: idx, val }));
   const n = arr.length;
-  const history = [[...arr]]; // First row: input array
-  for (let i = 0; i < n; i++) {
+  const passes = [];
+  let workingArr = arr.map(x => ({ ...x }));
+  for (let i = 0; i < n - 1; i++) {
+    const steps = [];
+    let arrCopy = workingArr.map(x => ({ ...x }));
     for (let j = 0; j < n - i - 1; j++) {
-      if (arr[j] > arr[j + 1]) {
-        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+      const shouldSwap = arrCopy[j].val > arrCopy[j + 1].val;
+      steps.push({
+        array: arrCopy.map(x => ({ ...x })),
+        compare: [j, j + 1],
+        swap: shouldSwap,
+      });
+      if (shouldSwap) {
+        [arrCopy[j], arrCopy[j + 1]] = [arrCopy[j + 1], arrCopy[j]];
       }
     }
-    history.push([...arr]); // After each outer loop iteration
+    // Final state for this pass (ensure full array)
+    steps.push({
+      array: arrCopy.map(x => ({ ...x })),
+      compare: [],
+      swap: false,
+    });
+    passes.push(steps);
+    workingArr = arrCopy;
   }
-  return history;
+  return passes;
 }
 
-const BubbleSort = ({ array }) => {
-  const [step, setStep] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const intervalRef = useRef(null);
+const BOX_WIDTH = 56;
+const ROW_HEIGHT = 64;
 
-  // Precompute the history for the current array
-  const history = getBubbleSortPasses(array);
+const BubbleSort = ({ array }) => {
+  if (!array || array.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full">
+        <div className="text-white text-xl mt-12">Please enter an array and click Generate to visualize Bubble Sort.</div>
+      </div>
+    );
+  }
+  const n = array.length;
+  const initialArray = useMemo(() => array.map((val, idx) => ({ id: idx, val })), [array]);
+  const passes = useMemo(() => getBubbleSortPassesWithIds(array), [array]);
+  const [currentPass, setCurrentPass] = useState(0); // i
+  const [step, setStep] = useState(0); // j
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const itemRefs = useRef({});
+
+  // For centering: calculate total width
+  const totalWidth = n * BOX_WIDTH;
+  const totalRows = passes.length;
+
+  // Current steps and array for the active pass
+  const currentSteps = passes[currentPass] || [];
+  const current = currentSteps[step] || { array: initialArray, compare: [], swap: false };
+
+  // Map: id -> current index in the current array
+  const idToIndex = {};
+  current.array.forEach((item, idx) => {
+    idToIndex[item.id] = idx;
+  });
+
+  // Animate comparison color
+  useEffect(() => {
+    if (!current || !current.compare.length) return;
+    const [i, j] = current.compare;
+    const color = current.swap ? '#dc2626' : '#22c55e';
+    setIsAnimating(true);
+    const idA = current.array[i]?.id;
+    const idB = current.array[j]?.id;
+    const elA = idA !== undefined ? itemRefs.current[idA] : null;
+    const elB = idB !== undefined ? itemRefs.current[idB] : null;
+    if (!elA || !elB) {
+      setIsAnimating(false);
+      return;
+    }
+    const tl = gsap.timeline({
+      onComplete: () => {
+        gsap.to([elA, elB], { backgroundColor: '#18182a', duration: 0.2 });
+        setIsAnimating(false);
+      }
+    });
+    tl.to([elA, elB], { backgroundColor: color, duration: 0.3 })
+      .to([elA, elB], { backgroundColor: '#18182a', duration: 0.2 }, "+=0.2");
+    return () => tl.kill();
+  }, [step, currentPass]);
+
+  // Animate position swaps
+  useLayoutEffect(() => {
+    initialArray.forEach((item, origIdx) => {
+      const el = itemRefs.current[item.id];
+      if (!el) return;
+      const newIdx = idToIndex[item.id];
+      const x = (newIdx - origIdx) * BOX_WIDTH;
+      gsap.to(el, { x, duration: 0.4, ease: 'power2.inOut' });
+    });
+  }, [step, currentPass, initialArray, idToIndex]);
+
+  // Play mode: advance after animation
+  useEffect(() => {
+    if (isPlaying && !isAnimating) {
+      if (step < currentSteps.length - 1) {
+        const timeout = setTimeout(() => setStep(s => s + 1), 500);
+        return () => clearTimeout(timeout);
+      } else if (currentPass < passes.length - 1) {
+        // Move to next pass
+        const timeout = setTimeout(() => {
+          setCurrentPass(p => p + 1);
+          setStep(0);
+        }, 700);
+        return () => clearTimeout(timeout);
+      } else {
+        setIsPlaying(false);
+      }
+    }
+  }, [isPlaying, isAnimating, step, currentSteps.length, currentPass, passes.length]);
 
   // Controls
   const play = () => {
-    if (intervalRef.current) return;
+    if (isPlaying || (currentPass === passes.length - 1 && step === currentSteps.length - 1)) return;
     setIsPlaying(true);
-    intervalRef.current = setInterval(() => {
-      setStep(s => {
-        if (s < history.length - 1) return s + 1;
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-        setIsPlaying(false);
-        return s;
-      });
-    }, 800);
   };
   const pause = () => {
     setIsPlaying(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
   };
   const stepForward = () => {
-    setStep(s => Math.min(s + 1, history.length - 1));
+    if (isAnimating) return;
+    if (step < currentSteps.length - 1) {
+      setStep(s => s + 1);
+    } else if (currentPass < passes.length - 1) {
+      setCurrentPass(p => p + 1);
+      setStep(0);
+    }
   };
   const stepBack = () => {
-    setStep(s => Math.max(s - 1, 0));
+    if (isAnimating) return;
+    if (step > 0) {
+      setStep(s => s - 1);
+    } else if (currentPass > 0) {
+      setCurrentPass(p => p - 1);
+      setStep(passes[currentPass - 1].length - 1);
+    }
   };
   // Reset on array change
-  React.useEffect(() => {
+  useEffect(() => {
+    setCurrentPass(0);
     setStep(0);
-    pause();
+    setIsPlaying(false);
   }, [array]);
-  React.useEffect(() => () => pause(), []);
 
-  // Render the grid: each row is a pass, each cell is an array value
+  // Render all previous passes as static rows
   return (
-    <div className="flex flex-col gap-8 w-full">
-      {/* Visualization Grid */}
-      <div className="bg-[#18182a] p-6 rounded-xl flex-1">
-        <div className="mb-4 text-xl font-bold text-center">Visualisation</div>
-        <div className="overflow-x-auto">
-          <div className="flex flex-col gap-2">
-            {history.slice(0, step + 1).map((row, rowIdx) => (
-              <div key={rowIdx} className="flex gap-2 justify-center">
-                {row.map((val, i) => {
-                  // Highlight sorted portion in green for all but the first row
-                  let boxClass = '';
-                  if (rowIdx > 0 && i >= row.length - rowIdx) boxClass = 'bg-green-700 border-green-400';
+    <div className="flex flex-col gap-8 w-full items-center">
+      <div className="bg-[#18182a] p-8 rounded-2xl shadow-lg flex flex-col items-center w-fit mx-auto">
+        <div className="mb-4 text-2xl font-bold text-center text-white">Visualisation</div>
+        {/* Header row for indices */}
+        <div className="flex justify-center mb-2 gap-2">
+          {initialArray.map((_, i) => (
+            <div
+              key={i}
+              className="w-14 h-6 text-xs text-center text-gray-300 font-mono"
+              style={{ lineHeight: '1.5rem' }}
+            >
+              i={i}
+            </div>
+          ))}
+        </div>
+        <div
+          className="flex flex-col items-center gap-2 overflow-y-auto"
+          style={{ maxHeight: '70vh', minHeight: ROW_HEIGHT * totalRows + 'px' }}
+        >
+          {/* Empty row at the top before animation starts */}
+          <div className="flex gap-2 justify-center">
+            {Array.from({ length: n }).map((_, colIdx) => (
+              <div
+                key={colIdx}
+                className="w-14 h-14 rounded-lg flex flex-col justify-center items-center font-mono text-lg font-bold border-2 border-white bg-[#23233a] text-white opacity-30"
+                style={{ margin: 0 }}
+              >
+                {/* empty */}
+              </div>
+            ))}
+          </div>
+          {/* Render all previous passes as static rows */}
+          {passes.slice(0, currentPass).map((steps, i) => {
+            const lastStep = steps[steps.length - 1];
+            return (
+              <div
+                key={i}
+                className="flex gap-2 justify-center"
+              >
+                {Array.from({ length: n }).map((_, colIdx) => {
+                  const item = lastStep.array[colIdx];
+                  let cellClass = 'bg-[#23233a] border-2 border-white';
+                  // Only apply green in the last step of each pass
+                  if (colIdx >= n - (i + 1)) cellClass = 'bg-green-600 border-green-400';
                   return (
                     <div
-                      key={i}
-                      className={`w-12 h-12 rounded-lg border-2 text-center flex flex-col justify-center items-center font-mono text-lg font-bold transition-all duration-200 ${boxClass}`}
-                      style={{ color: '#fff' }}
+                      key={colIdx}
+                      className={`w-14 h-14 rounded-lg flex flex-col justify-center items-center font-mono text-lg font-bold text-white transition-all duration-200 ${cellClass}`}
+                      style={{ margin: 0 }}
                     >
-                      {val}
+                      {item?.val ?? ''}
                     </div>
                   );
                 })}
               </div>
-            ))}
+            );
+          })}
+          {/* Render the current pass as an animated row */}
+          <div
+            className="flex gap-2 justify-center"
+          >
+            {Array.from({ length: n }).map((_, colIdx) => {
+              const item = current.array[colIdx];
+              let cellClass = 'bg-[#23233a] border-2 border-white';
+              // Animate compared cells by index
+              if (
+                current.compare.length &&
+                (colIdx === current.compare[0] || colIdx === current.compare[1])
+              ) {
+                cellClass = current.swap ? 'bg-red-600 border-red-400' : 'bg-yellow-500 border-yellow-400';
+              }
+              // Only apply green if on the very last step of the last pass
+              if (
+                currentPass === passes.length - 1 &&
+                step === passes[passes.length - 1].length - 1 &&
+                colIdx >= n - (currentPass + 1)
+              ) {
+                cellClass = 'bg-green-600 border-green-400';
+              }
+              return (
+                <div
+                  key={colIdx}
+                  className={`w-14 h-14 rounded-lg flex flex-col justify-center items-center font-mono text-lg font-bold text-white transition-all duration-200 ${cellClass}`}
+                  style={{ margin: 0 }}
+                >
+                  {item?.val ?? ''}
+                </div>
+              );
+            })}
           </div>
+          {/* Final green row after sorting is complete */}
+          {currentPass === passes.length - 1 && step === passes[passes.length - 1].length - 1 && (
+            <div className="flex gap-2 justify-center mt-2">
+              {Array.from({ length: n }).map((_, colIdx) => {
+                const item = current.array[colIdx];
+                return (
+                  <div
+                    key={colIdx}
+                    className="w-14 h-14 rounded-lg flex flex-col justify-center items-center font-mono text-lg font-bold text-white bg-green-600 border-2 border-green-400"
+                    style={{ margin: 0 }}
+                  >
+                    {item?.val ?? ''}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
         {/* Controls */}
-        <div className="flex gap-2 justify-center mt-4">
-          <button onClick={stepBack} className="bg-gray-600 px-3 py-1 rounded text-white" disabled={step === 0}>Prev</button>
-          <button onClick={play} className="bg-yellow-600 px-3 py-1 rounded text-white" disabled={isPlaying || step === history.length - 1}>Play</button>
-          <button onClick={pause} className="bg-gray-600 px-3 py-1 rounded text-white" disabled={!isPlaying}>Pause</button>
-          <button onClick={stepForward} className="bg-gray-600 px-3 py-1 rounded text-white" disabled={step === history.length - 1}>Next</button>
+        <div className="flex gap-2 justify-center mt-6">
+          <button onClick={stepBack} className="bg-gray-600 hover:bg-gray-800 px-4 py-2 rounded text-white" disabled={currentPass === 0 && step === 0 || isAnimating}>Prev</button>
+          <button onClick={play} className="bg-yellow-600 hover:bg-yellow-800 px-4 py-2 rounded text-white" disabled={isPlaying || (currentPass === passes.length - 1 && step === currentSteps.length - 1) || isAnimating}>Play</button>
+          <button onClick={pause} className="bg-gray-600 hover:bg-gray-800 px-4 py-2 rounded text-white" disabled={!isPlaying}>Pause</button>
+          <button onClick={stepForward} className="bg-gray-600 hover:bg-gray-800 px-4 py-2 rounded text-white" disabled={(currentPass === passes.length - 1 && step === currentSteps.length - 1) || isAnimating}>Next</button>
         </div>
       </div>
     </div>
   );
 };
 
-export default BubbleSort; 
+export default BubbleSort;

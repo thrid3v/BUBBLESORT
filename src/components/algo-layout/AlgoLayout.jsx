@@ -35,7 +35,7 @@ const AlgoLayout = ({ array, searchElement, selectedAlgo }) => {
 
   return (
     <div className="flex flex-col items-center gap-4 mt-6 w-full max-w-3xl">
-      <div className="flex gap-4">
+      {/* <div className="flex gap-4">
         <button
           className="bg-yellow-600 hover:bg-yellow-800 px-4 py-2 rounded text-white"
           onClick={() => setIsPlaying(true)}
@@ -48,7 +48,7 @@ const AlgoLayout = ({ array, searchElement, selectedAlgo }) => {
         >
           Pause
         </button>
-      </div>
+      </div> */}
       {renderAlgorithm()}
     </div>
   );
